@@ -1,3 +1,6 @@
+# Main output file
+*_main.pdf
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
