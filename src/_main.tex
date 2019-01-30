@@ -1,0 +1,50 @@
+% !TEX encoding = UTF-8
+% !TEX spellcheck = it_IT
+
+\documentclass[11pt]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\usepackage[style=authoryear,backend=bibtex]{biblatex}
+\addbibresource{bibliography.bib}
+
+\begin{document}
+\author{Giovanni Papini}
+\title{Adversarial Autoencoders}
+\subtitle{Adattato da \cite{makhzani2015adversarial}}
+%\logo{}
+\institute{Universit\'a degli Studi di Firenze}
+\date{12 febbraio 2019}
+\subject{autoencoders, neural network, AI}
+%\setbeamercovered{transparent}
+%\setbeamertemplate{navigation symbols}{}
+
+\begin{frame}[plain]
+\maketitle
+\end{frame}
+
+\begin{frame}
+\frametitle{Abstract}
+
+\begin{itemize}
+  \item Autoencoder probabilistico
+  \item Utilizzo del framework GAN
+  \item Riduzione dei ``buchi'' nello spazio latente (vedi VAE)
+  \item Numerose applicazioni:
+  \begin{itemize}
+    \item apprendimento semi-supervisionato
+    \item separare lo stile e il contenuto d'immagini
+    \item clustering non supervisionato
+    \item riduzione di dimensionalità 
+    \item visualizzazione dei dati
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bibliografia}
+\printbibliography
+\end{frame}
+
+\end{document}
