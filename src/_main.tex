@@ -13,8 +13,8 @@
 \usepackage[style=authoryear,backend=bibtex]{biblatex}
 \addbibresource{bibliography.bib}
 
-\setbeamertemplate{itemize item}[square]
-\setbeamertemplate{itemize subitem}[circle]
+\setbeamertemplate{itemize item}{\color{black}$\circ$}
+\setbeamertemplate{itemize subitem}{\color{black}$\bullet$}
 
 % Math symbols
 \DeclareMathOperator{\Cat}{Cat}
@@ -23,13 +23,15 @@
 
 \newcommand{\vect}[1]{\boldsymbol{#1}} % make bold vector names
 
+\usepackage{booktabs}
+
 \begin{document}
 \author{Giovanni Papini}
 \title{Adversarial Autoencoders (AAE)}
-\subtitle{Adattato da \cite{makhzani2015adversarial}}
+\subtitle{Adapted from \cite{makhzani2015adversarial}}
 %\logo{}
 \institute{Universit\'a degli Studi di Firenze}
-\date{12 febbraio 2019}
+\date{February 12, 2019}
 \subject{autoencoders, neural network, AI}
 %\setbeamercovered{transparent}
 %\setbeamertemplate{navigation symbols}{}
@@ -58,8 +60,8 @@
 \begin{itemize}
   \item Scalable generative models to capture rich distributions
   \item Graphical models such as RBMs , DBNs, DBMs are based on MCMC algorithms for doing inference
-  % via via sempre più imprecisi a causa dell'incapacità di mixing veloce tra le mode delle catene
-  \item VAE, GAN, GMMN are trained via direct back-propagation
+  % via via sempre più imprecisi a causa dell'incapacità di mixing veloce tra le mode delle marginali
+  \item VAEs, GANs, GMMNs are trained via direct back-propagation
   \item The AAE is trained with dual objectives:
   % AE classico non regolarizzato ottiene una codifica troppo arbitraria e poco compatta
   \begin{itemize}
@@ -77,6 +79,16 @@
 \[ p(\vect z) = \int_{\Omega_x} q(\vect z | \vect x) p_d(\vect x) \text d \vect x \]
 \end{frame}
 
+\begin{frame}{The encoder}
+\begin{itemize}
+  \setlength\itemsep{1.5em}
+  \item \textbf{Deterministic} — (used in the paper)
+  \item \textbf{Gaussian posterior} — $ z_i \sim \Norm(\mu_i(\vect x), \sigma_i(\vect x)) $
+  \item \textbf{Universal approximator posterior} — $ \vect z | \vect x, \vect \eta \sim \delta(\vect z - f(\vect x, \vect \eta)) $ \\ where $ \vect \eta $ is random noise with a fixed distribution
+  \[ q(\vect z | \vect x) = \int_{\Omega_\eta} q(\vect z | \vect x, \vect \eta) p_\eta(\vect \eta) \text d \vect \eta \]
+\end{itemize}
+\end{frame}
+
 \begin{frame}{Relationship with VAEs}
 \begin{figure}
   \centering
@@ -88,19 +100,19 @@
 \centering
 \begin{tabular}{c c}
   \textbf{GAN} & \textbf{AAE} \\ \hline
-  \parbox{0.45\linewidth}{\begin{itemize} 
-      \item imposes the data distribution to the output of a neural network 
-    \end{itemize}} & 
+  \parbox{0.45\linewidth}{\begin{itemize}
+      \item imposes the data distribution to the output of a neural network
+    \end{itemize}} &
   \parbox{0.45\linewidth}{\begin{itemize}
       \item relies on the autoencoder to capture the data distribution
       \item shapes a much lower dimensional space into a much simpler distribution
     \end{itemize}} \\
   \textbf{GMMN} & \textbf{AAE} \\ \hline
   \parbox{0.45\linewidth}{\begin{itemize}
-      \item first trains a dropout autoencoder then fits a distribution in the code-space of the pretrained network
+      \item (first) trains a dropout autoencoder (then) fits a distribution in the code-space of the pretrained network
   \end{itemize}} &
   \parbox{0.45\linewidth}{\begin{itemize}
-      \item uses adversarial training as a regularizer that shapes the code that shapes the code distribution while training the autoencoder from scratch
+      \item uses adversarial training as a regularizer that shapes the code distribution while training the autoencoder from scratch
   \end{itemize}}
 \end{tabular}
 \end{frame}
@@ -108,12 +120,23 @@
 \begin{frame}{Likelihood analysis}
 \begin{itemize}
   \item Benchmarks on: MNIST, \href{../images/tfd.gif}{\underline{Toronto Face Dataset}} (TFD)
-  \item Not direct likelihood measure, but lower bound approximation (KDE using Gaussian Parzen window)
+  \item Not direct likelihood measure, but lower bound approximation (KDE using Gaussian Parzen window, $ \sigma $ selected by cross-validation)
 \end{itemize}
-\begin{figure}
+\begin{table}
   \centering
-  \includegraphics[width=\linewidth]{../images/performance-table-01.png}
-\end{figure}
+  \small
+  %\includegraphics[width=\linewidth]{../images/performance-table-01.png}
+  \begin{tabular}{l||c||c||c||c}
+  	\toprule
+  	             &   MNIST(10K)    & MNIST(10M) &    TFD(10K)     & TFD(10M) \\ \midrule
+  	DBN          &  $ 138 \pm 2 $  &     -      & $ 1909 \pm 66 $ &    -     \\
+  	Stacked CAE  & $ 121 \pm 1.6 $ &     -      & $ 2110 \pm 50 $ &    -     \\
+  	Deep GSN     & $ 214 \pm 1.1 $ &     -      & $ 2890 \pm 29 $ &    -     \\
+  	GAN          &  $ 225 \pm 2 $  &  $ 386 $   & $ 2057 \pm 26 $ &    -     \\
+  	GMMN + AE    &  $ 282 \pm 2 $  &     -      & $ 2204 \pm 20 $ &    -     \\ \midrule
+  	\textbf{AAE} &  $ 340 \pm 2 $  &  $ 427 $   & $ 2252 \pm 16 $ & $ 2522 $ \\ \bottomrule
+  \end{tabular}
+\end{table}
 \end{frame}
 
 \begin{frame}{Semi-supervised approach}{Architecture}
@@ -159,23 +182,54 @@
 \end{frame}
 
 \begin{frame}{Semi-supervised classification}{Results}
-\begin{figure}
+\begin{table}
   \centering
-  \includegraphics[width=\linewidth]{../images/performance-table-02.png}
-\end{figure}
+  \scriptsize
+  %\includegraphics[width=\linewidth]{../images/performance-table-02.png}
+    \begin{tabular}{l||c|c|c||c}
+    	\toprule
+    	                &     MNIST(100)      &    MNIST(1000)    &    MNIST(All)     &     SVHN(1000)     \\ \midrule
+    	NN Baseline     &      $ 25.80 $      &     $ 8.73 $      &     $ 1.25 $      &      $ 47.5 $      \\ \midrule
+    	VAE (M1) + TSVM & $ 11.82 \pm 0.025 $ & $ 4.24 \pm 0.07 $ &         -         & $ 55.33 \pm 0.11 $ \\
+    	VAE (M2)        & $ 11.97 \pm 1.71 $  & $ 3.60 \pm 0.56 $ &         -         & $ 36.02 \pm 0.10 $ \\
+    	VAE (M1 + M2)   &  $ 3.33 \pm 0.14 $  & $ 2.40 \pm 0.02 $ &     $ 0.96 $      &     $ 24.63 $      \\
+    	CatGAN          &  $ 1.91 \pm 0.1 $   & $ 1.73 \pm 0.18 $ &     $ 0.91 $      &         -          \\
+    	Ladder Networks &  $ 1.06 \pm 0.37 $  & $ 0.84 \pm 0.08 $ & $ 0.57 \pm 0.02 $ &         -          \\
+    	ADGM            &  $ 0.96 \pm 0.10 $  &         -         &         -         & $ 16.61 \pm 0.24 $ \\ \midrule
+    	\textbf{AAE}    &  $ 1.90 \pm 0.10 $  & $ 1.60 \pm 0.08 $ & $ 0.85 \pm 0.02 $ & $ 17.70 \pm 0.30 $ \\ \bottomrule
+    \end{tabular}
+  \caption{Error rate on semi-supervised classification}
+\end{table}
 % AAE models are trained end-to-end while VAE models have to be trained one layer a time
 \end{frame}
 
 \begin{frame}{Unsupervised clustering}
 \begin{itemize}
-  \item 
+  \item Similar to the semi-supervised architecture, but without the semi-supervised training stage
+  \item Not necessarily 10 classes, arbitrary number of clusters
+  \item Benchmark criterion: find $ \arg\max_{\vect{x}_n} q(y_i | \vect x_n)  $ and assign label of $ x_n $ to all elements of $ i $-th cluster, then compute error rate based on the assigned class labels
 \end{itemize}
+\begin{table}
+  \centering
+  \small
+  \begin{tabular}{l || c}
+  	\toprule
+  	                     & MNIST (Unsupervised) \\ \midrule
+  	CatGAN (20 clusters) & $ 9.70 $             \\
+  	AAE (16 clusters)    & $ 9.55 \pm 2.05 $    \\
+  	AAE (30 clusters)    & $ 4.10 \pm 1.13 $    \\ \bottomrule
+  \end{tabular}
+  \caption{Error-rate on unsupervised clustering}
+\end{table}
 \end{frame}
 
 \begin{frame}{Dimensionality reduction}{Architecture}
+\begin{itemize}
+  \item Typically, non-regularized autoencoders fracture the manifold resulting in very different codes for similar images
+\end{itemize}
 \begin{figure}
   \centering
-  \includegraphics[width=0.8\linewidth]{../images/aae-architecture-04.png}
+  \includegraphics[width=0.6\linewidth]{../images/aae-architecture-04.png}
 \end{figure}
 \end{frame}
 
