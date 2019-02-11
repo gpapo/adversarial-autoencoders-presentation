@@ -6,15 +6,22 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 
+\setbeamertemplate{itemize item}{\color{black}$\circ$}
+\setbeamertemplate{itemize subitem}{\color{black}$\bullet$}
+
+% Bibliography
+\usepackage[
+  backend=bibtex,
+  style=authoryear-icomp,
+  natbib=true,
+  %url=false,
+  sorting=ynt]{biblatex}
+\addbibresource{aae.bib}
+
+% Math pkgs
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
-
-\usepackage[style=authoryear,backend=bibtex]{biblatex}
-\addbibresource{aae.bib}
-
-\setbeamertemplate{itemize item}{\color{black}$\circ$}
-\setbeamertemplate{itemize subitem}{\color{black}$\bullet$}
 
 % Math symbols
 \DeclareMathOperator{\Cat}{Cat}
@@ -27,7 +34,7 @@
 
 \usepackage{booktabs}
 
-\AtBeginBibliography{\footnotesize}
+\AtBeginBibliography{\scriptsize}
 
 \begin{document}
 \author{Giovanni Papini}
@@ -65,8 +72,8 @@
   \item Scalable generative models to capture rich distributions
   \item Graphical models such as RBMs , DBNs, DBMs are based on MCMC algorithms for doing inference
   % via via sempre più imprecisi a causa dell'incapacità di mixing veloce tra le mode delle marginali
-  \item VAEs, GANs, GMMNs are trained via direct back-propagation
-  \item The AAE is trained with dual objectives:
+  \item VAE [\cite{kingma2013auto}], GAN [\cite{goodfellow2014generative}], GMMN [\cite{li2015generative}] are trained via direct back-propagation
+  \item The AAE is trained via back-propagation with dual objectives:
   % AE classico non regolarizzato ottiene una codifica troppo arbitraria e poco compatta
   \begin{itemize}
     \item \textbf{minimizing the reconstruction error} — $ \left|\left|\vect x - \hat{\vect x}\right|\right| ^2 $
@@ -78,16 +85,37 @@
 \begin{frame}{The AAE architecture}
 \begin{figure}
   \centering
-  \includegraphics[width=0.8\linewidth]{../images/aae-architecture-01.png}
+  \includegraphics[width=\linewidth]{../images/aae-architecture-01-alt.png}
 \end{figure}
-\[ p(\vect z) = \int_{\Omega_x} q(\vect z | \vect x) p_d(\vect x) \text d \vect x \]
+\end{frame}
+
+\begin{frame}{The AAE architecture}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{../images/aae-architecture-01-alt2.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}{The AAE architecture}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{../images/aae-architecture-01-alt3.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}{The AAE architecture}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{../images/aae-architecture-01-alt4.png}
+\end{figure}
 \end{frame}
 
 \begin{frame}{The encoder}
+\[ q(\vect z) = \int_{\Omega_x} q(\vect z | \vect x) p_d(\vect x) \text d \vect x  \to p(\vect z) \]
 \begin{itemize}
   \setlength\itemsep{1.5em}
   \item \textbf{Deterministic} — (used in the paper)
-  \item \textbf{Gaussian posterior} — $ z_i \sim \Norm(\mu_i(\vect x), \sigma_i(\vect x)) $
+  \item \textbf{Gaussian posterior} — $ z_i | \vect x \sim \Norm(\mu_i(\vect x), \sigma_i(\vect x)) $
   \item \textbf{Universal approximator posterior} — $ \vect z | \vect x, \vect \eta \sim \delta(\vect z - f(\vect x, \vect \eta)) $ \\ where $ \vect \eta $ is random noise with a fixed distribution
   \[ q(\vect z | \vect x) = \int_{\Omega_\eta} q(\vect z | \vect x, \vect \eta) p_\eta(\vect \eta) \text d \vect \eta \]
 \end{itemize}
@@ -96,10 +124,9 @@
 \begin{frame}{Relationship with VAEs}
 VAE aims to minimize the negative ELBO:
 \begin{align*}
-  \E_{\vect x}[-\log p(\vect x)] 
-    &< \E_{\vect x}\left[ \E_{\vect z \sim q(\vect z | \vect x)}[-\log p(\vect x | \vect z)] + \KL(q(\vect z | \vect x) || p(\vect z)) \right] \\
-    &= \E_{\vect x}\left[ \E_{\vect z}[-\log p(\vect x | \vect z)] \right] + \E_{\vect x}[- H(q(\vect z | \vect x))] \\ 
-    &\qquad + \E_{\vect z \sim q(\vect z | \vect x)}[-\log p(\vect z)] \\
+  -\log p(\vect x)
+    &< \E_{\vect z \sim q(\vect z | \vect x)}[-\log p(\vect x | \vect z)] + \KL(q(\vect z | \vect x) || p(\vect z)) \\
+    &= \E_{\vect z}[-\log p(\vect x | \vect z)] - H(q(\vect z | \vect x)) + \E_{\vect z \sim q(\vect z | \vect x)}[-\log p(\vect z)] \\
     &= \text{Reconstr. Err.} - \text{Entropy} + \text{Crossentropy}
 \end{align*}
 \begin{table}
@@ -156,29 +183,36 @@ VAE aims to minimize the negative ELBO:
   \small
   %\includegraphics[width=\linewidth]{../images/performance-table-01.png}
   \begin{tabular}{l||c||c||c||c}
-    \toprule
-                 &   MNIST(10K)    & MNIST(10M) &    TFD(10K)     & TFD(10M) \\ \midrule
-    DBN          &  $ 138 \pm 2 $  &     -      & $ 1909 \pm 66 $ &    -     \\
-    Stacked CAE  & $ 121 \pm 1.6 $ &     -      & $ 2110 \pm 50 $ &    -     \\
-    Deep GSN     & $ 214 \pm 1.1 $ &     -      & $ 2890 \pm 29 $ &    -     \\
-    GAN          &  $ 225 \pm 2 $  &  $ 386 $   & $ 2057 \pm 26 $ &    -     \\
-    GMMN + AE    &  $ 282 \pm 2 $  &     -      & $ 2204 \pm 20 $ &    -     \\ \midrule
-    \textbf{AAE} &  $ 340 \pm 2 $  &  $ 427 $   & $ 2252 \pm 16 $ & $ 2522 $ \\ \bottomrule
+  	\toprule
+  	             &   MNIST(10K)    & MNIST(10M) &    TFD(10K)     & TFD(10M) \\ \midrule
+  	DBN          & $ 138 \pm 2.0 $ &     -      & $ 1909 \pm 66 $ &    -     \\
+  	Stacked CAE  & $ 121 \pm 1.6 $ &     -      & $ 2110 \pm 50 $ &    -     \\
+  	Deep GSN     & $ 214 \pm 1.1 $ &     -      & $ 2890 \pm 29 $ &    -     \\
+  	GAN          & $ 225 \pm 2.0 $ &  $ 386 $   & $ 2057 \pm 26 $ &    -     \\
+  	GMMN + AE    & $ 282 \pm 2.0 $ &     -      & $ 2204 \pm 20 $ &    -     \\ \midrule
+  	\textbf{AAE} & $ 340 \pm 2.0 $ &  $ 427 $   & $ 2252 \pm 16 $ & $ 2522 $ \\ \bottomrule
   \end{tabular}
 \end{table}
 \end{frame}
 
-\begin{frame}{Semi-supervised approach}{Architecture}
+\begin{frame}{Semi-supervised approach}{Incorporating label information}
 \begin{itemize}
   \item Incorporate one-hot vector in the latent representation
-  \begin{figure}
-    \centering
-    \includegraphics[width=0.6\linewidth]{../images/aae-architecture-02.png}
-  \end{figure}
 \end{itemize}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\linewidth]{../images/aae-architecture-02.png}
+\end{figure}
 \end{frame}
 
-\begin{frame}{Semi-supervised approach}
+\begin{frame}{Semi-supervised approach}{Incorporating label information}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{../images/dim_reduction-scatter-02.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Semi-supervised approach}{Incorporating label information}
 \begin{itemize}
   \item The AAE disentangles \textit{style} features from \textit{content/semantic} features
   \item Experiments on MNIST and \href{../images/svhn.gif}{\underline{Street View House Number}} dataset (SVHN)
@@ -226,15 +260,15 @@ VAE aims to minimize the negative ELBO:
   %\includegraphics[width=\linewidth]{../images/performance-table-02.png}
     \begin{tabular}{l||c|c|c||c}
     	\toprule
-    	                &     MNIST(100)      &    MNIST(1000)    &    MNIST(All)     &     SVHN(1000)     \\ \midrule
-    	NN Baseline     &      $ 25.80 $      &     $ 8.73 $      &     $ 1.25 $      &      $ 47.5 $      \\ \midrule
-    	VAE (M1) + TSVM & $ 11.82 \pm 0.025 $ & $ 4.24 \pm 0.07 $ &         -         & $ 55.33 \pm 0.11 $ \\
-    	VAE (M2)        & $ 11.97 \pm 1.71 $  & $ 3.60 \pm 0.56 $ &         -         & $ 36.02 \pm 0.10 $ \\
-    	VAE (M1 + M2)   &  $ 3.33 \pm 0.14 $  & $ 2.40 \pm 0.02 $ &     $ 0.96 $      &     $ 24.63 $      \\
-    	CatGAN          &  $ 1.91 \pm 0.1 $   & $ 1.73 \pm 0.18 $ &     $ 0.91 $      &         -          \\
-    	Ladder Networks &  $ 1.06 \pm 0.37 $  & $ 0.84 \pm 0.08 $ & $ 0.57 \pm 0.02 $ &         -          \\
-    	ADGM            &  $ 0.96 \pm 0.10 $  &         -         &         -         & $ 16.61 \pm 0.24 $ \\ \midrule
-    	\textbf{AAE}    &  $ 1.90 \pm 0.10 $  & $ 1.60 \pm 0.08 $ & $ 0.85 \pm 0.02 $ & $ 17.70 \pm 0.30 $ \\ \bottomrule
+    	                &     MNIST(100)     &    MNIST(1000)    &    MNIST(All)     &     SVHN(1000)     \\ \midrule
+    	NN Baseline     &     $ 25.80 $      &     $ 8.73 $      &     $ 1.25 $      &      $ 47.5 $      \\ \midrule
+    	VAE (M1) + TSVM & $ 11.82 \pm 0.03 $ & $ 4.24 \pm 0.07 $ &         -         & $ 55.33 \pm 0.11 $ \\
+    	VAE (M2)        & $ 11.97 \pm 1.71 $ & $ 3.60 \pm 0.56 $ &         -         & $ 36.02 \pm 0.10 $ \\
+    	VAE (M1 + M2)   & $ 3.33 \pm 0.14 $  & $ 2.40 \pm 0.02 $ &     $ 0.96 $      &     $ 24.63 $      \\
+    	CatGAN          & $ 1.91 \pm 0.10 $  & $ 1.73 \pm 0.18 $ &     $ 0.91 $      &         -          \\
+    	Ladder Networks & $ 1.06 \pm 0.37 $  & $ 0.84 \pm 0.08 $ & $ 0.57 \pm 0.02 $ &         -          \\
+    	ADGM            & $ 0.96 \pm 0.10 $  &         -         &         -         & $ 16.61 \pm 0.24 $ \\ \midrule
+    	\textbf{AAE}    & $ 1.90 \pm 0.10 $  & $ 1.60 \pm 0.08 $ & $ 0.85 \pm 0.02 $ & $ 17.70 \pm 0.30 $ \\ \bottomrule
     \end{tabular}
   \caption{Error rate on semi-supervised classification.}
 \end{table}
@@ -315,6 +349,8 @@ VAE aims to minimize the negative ELBO:
 \nocite{kingma2013auto}
 \nocite{maaloe2016auxiliary}
 \nocite{li2015generative}
+\nocite{nagabushan2017}
+\nocite{harang2018adversarial}
 
 \printbibliography
 \end{frame}
